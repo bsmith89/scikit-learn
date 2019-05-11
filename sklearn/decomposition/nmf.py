@@ -179,18 +179,39 @@ def _special_sparse_dot(W, H, X):
 
 
 def _compute_regularization(alpha, l1_ratio, regularization):
-    """Compute L1 and L2 regularization coefficients for W and H"""
-    alpha_H = 0.
-    alpha_W = 0.
-    if regularization in ('both', 'components'):
-        alpha_H = float(alpha)
-    if regularization in ('both', 'transformation'):
-        alpha_W = float(alpha)
+    """Compute L1 and L2 regularization coefficients for W and H.
 
-    l1_reg_W = alpha_W * l1_ratio
-    l1_reg_H = alpha_H * l1_ratio
-    l2_reg_W = alpha_W * (1. - l1_ratio)
-    l2_reg_H = alpha_H * (1. - l1_ratio)
+    If *regularization* is 'both', allow *alpha* and *l1_ratio* to be
+    list-like of length 2.
+
+    """
+    alpha = np.asarray(alpha).ravel()
+    l1_ratio = np.asarray(l1_ratio).ravel()
+    if regularization == 'both':
+        assert len(alpha) <= 2, "No more than two alphas can be provided if regularization == 'both'."
+        if len(alpha) == 1:
+            alpha = np.concatenate([alpha, alpha])
+        assert len(l1_ratio) <= 2, "No more than two l1_ratios can be provided if regularization == 'both'."
+        if len(l1_ratio) == 1:
+            l1_ratio = np.concatenate([l1_ratio, l1_ratio])
+    elif regularization == 'components':
+        assert len(alpha <= 2), "No more than one alpha can be provided if regularization == 'components'."
+        alpha = np.concatenate([alpha, [0.]])
+        assert len(l1_ratio <= 2), "No more than one l1_ratio can be provided if regularization == 'components'."
+        l1_ratio = np.concatenate([l1_ratio, [0.]])
+    elif regularization == 'transformation':
+        assert len(alpha <= 2), "No more than one alpha can be provided if regularization == 'transformation'."
+        alpha = np.concatenate([[0], alpha])
+        assert len(l1_ratio <= 2), "No more than one l1_ratio can be provided if regularization == 'transformation'."
+        l1_ratio = np.concatenate([[0], l1_ratio])
+    elif regularization is None:
+        alpha = np.array([0, 0])
+        l1_ratio = np.array([0, 0])
+
+    l1_reg_H = alpha[0] * l1_ratio[0]
+    l2_reg_H = alpha[0] * (1. - l1_ratio[0])
+    l1_reg_W = alpha[1] * l1_ratio[1]
+    l2_reg_W = alpha[1] * (1. - l1_ratio[1])
     return l1_reg_W, l1_reg_H, l2_reg_W, l2_reg_H
 
 
