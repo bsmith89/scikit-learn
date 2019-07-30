@@ -188,30 +188,37 @@ def _compute_regularization(alpha, l1_ratio, regularization):
     alpha = np.asarray(alpha).ravel()
     l1_ratio = np.asarray(l1_ratio).ravel()
     if regularization == 'both':
-        assert len(alpha) <= 2, "No more than two alphas can be provided if regularization == 'both'."
+        assert len(alpha) <= 2 and len(l1_ratio) <= 2, \
+                ("No more than two alpha values and two l1_ratio values can "
+                "be provided if regularization is 'both'.")
         if len(alpha) == 1:
             alpha = np.concatenate([alpha, alpha])
-        assert len(l1_ratio) <= 2, "No more than two l1_ratios can be provided if regularization == 'both'."
         if len(l1_ratio) == 1:
             l1_ratio = np.concatenate([l1_ratio, l1_ratio])
     elif regularization == 'components':
-        assert len(alpha <= 2), "No more than one alpha can be provided if regularization == 'components'."
+        assert len(alpha) == 1 and len(l1_ratio) == 1, \
+                ("Only one alpha and one l1_ratio can be provided unless "
+                 "regularization is 'both'.")
         alpha = np.concatenate([alpha, [0.]])
-        assert len(l1_ratio <= 2), "No more than one l1_ratio can be provided if regularization == 'components'."
         l1_ratio = np.concatenate([l1_ratio, [0.]])
     elif regularization == 'transformation':
-        assert len(alpha <= 2), "No more than one alpha can be provided if regularization == 'transformation'."
+        assert len(alpha) == 1 and len(l1_ratio) == 1, \
+                ("Only one alpha and one l1_ratio can be provided unless "
+                 "regularization is 'both'.")
         alpha = np.concatenate([[0], alpha])
-        assert len(l1_ratio <= 2), "No more than one l1_ratio can be provided if regularization == 'transformation'."
         l1_ratio = np.concatenate([[0], l1_ratio])
     elif regularization is None:
         alpha = np.array([0, 0])
         l1_ratio = np.array([0, 0])
+    else:
+        raise ValueError(("'%s' is not a valid regularization: "
+                          "(both, components, transformation)")
+                            % regularization)
 
-    l1_reg_H = alpha[0] * l1_ratio[0]
-    l2_reg_H = alpha[0] * (1. - l1_ratio[0])
     l1_reg_W = alpha[1] * l1_ratio[1]
+    l1_reg_H = alpha[0] * l1_ratio[0]
     l2_reg_W = alpha[1] * (1. - l1_ratio[1])
+    l2_reg_H = alpha[0] * (1. - l1_ratio[0])
     return l1_reg_W, l1_reg_H, l2_reg_W, l2_reg_H
 
 
@@ -962,10 +969,10 @@ def non_negative_factorization(X, W=None, H=None, n_components=None,
         Maximum number of iterations before timing out.
 
     alpha : double, default: 0.
-        Constant that multiplies the regularization terms.
+        Constant(s) that multiply the regularization terms.
 
     l1_ratio : double, default: 0.
-        The regularization mixing parameter, with 0 <= l1_ratio <= 1.
+        The regularization mixing parameter(s), with 0 <= l1_ratio <= 1.
         For l1_ratio = 0 the penalty is an elementwise L2 penalty
         (aka Frobenius Norm).
         For l1_ratio = 1 it is an elementwise L1 penalty.
